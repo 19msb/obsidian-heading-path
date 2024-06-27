@@ -24,49 +24,52 @@ module.exports = class HeadingPathPlugin extends require('obsidian').Plugin {
     Copy() {
         const editor = this.app.workspace.getActiveViewOfType(require('obsidian').MarkdownView)?.editor;
         if (!editor) {
-            new Notice('No active editor');
+            new Notice('No active editor', 3000);
             return;
         }
 
         const cursor = editor.getCursor();
-        const lineText = editor.getLine(cursor.line);
-        const headingMatch = lineText.match(/^(#{1,6})\s*(.*)/);
+        let line = cursor.line;
 
-        if (!headingMatch) {
-            new Notice("Please select a heading to 'Copy' its path");
+        // Traverse upwards to find the nearest heading
+        let headingFound = false;
+        let headingPath = "";
+        while (line >= 0 && !headingFound) {
+            const lineText = editor.getLine(line);
+            const headingMatch = lineText.match(/^(#{1,6})\s*(.*)/);
+
+            if (headingMatch) {
+                headingFound = true;
+                let headingLevel = headingMatch[1].length;
+                const headingText = headingMatch[2];
+
+                headingPath = headingText;
+                // Continue to build the full path upwards
+                for (let upperLine = line - 1; upperLine >= 0; upperLine--) {
+                    const currentLineText = editor.getLine(upperLine);
+                    const currentHeadingMatch = currentLineText.match(/^(#{1,6})\s*(.*)/);
+
+                    if (currentHeadingMatch) {
+                        let currentHeadingLevel = currentHeadingMatch[1].length;
+                        if (currentHeadingLevel < headingLevel) {
+                            headingPath = `${currentHeadingMatch[2]} > ${headingPath}`;
+                            headingLevel = currentHeadingLevel;
+                        }
+                    }
+                }
+            }
+            line--;
+        }
+
+        if (!headingFound) {
+            new Notice("No heading found above the selected text", 3000);
             return;
         }
 
-        let headingLevel = headingMatch[1].length;
-        const headingText = headingMatch[2];
-
-        let headingPath = headingText;
-        for (let line = cursor.line - 1; line >= 0; line--) {
-            const currentLineText = editor.getLine(line);
-            const currentHeadingMatch = currentLineText.match(/^(#{1,6})\s*(.*)/);
-
-            if (currentHeadingMatch) {
-                let currentHeadingLevel = currentHeadingMatch[1].length;
-                const currentHeadingText = currentHeadingMatch[2];
-
-                if (currentHeadingLevel < headingLevel) {
-                    headingPath = `${currentHeadingText}>${headingPath}`;
-                    headingLevel = currentHeadingLevel;
-                }
-            }
-        }
-
         navigator.clipboard.writeText(headingPath).then(() => {
-            new Notice('Heading path copied to clipboard');
+            new Notice('Heading path copied to clipboard', 3000);
         }, () => {
-            new Notice('Failed to copy heading path');
+            new Notice('Failed to copy heading path', 3000);
         });
-    }
-
-    displayTimedNotice(message, duration) {
-        const notice = new require('obsidian').Notice(message);
-        setTimeout(() => {
-            if (notice) notice.hide();
-        }, duration);
     }
 }

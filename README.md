@@ -1,6 +1,6 @@
 # Heading Path
 
-Heading Path is an Obsidian plugin that allows users to quickly copy the path of a heading to their clipboard. It is a simple yet powerful tool for niche use cases. 
+Heading Path is an Obsidian plugin that allows users to quickly copy the heading path of selected text to their clipboard. It is a simple yet powerful tool for niche use cases. 
 
 ## Installation
 
@@ -29,13 +29,13 @@ You can install this plugin within Obsidian by doing the following:
 
 ## Usage
 
-1. Select a heading
+1. Select text
 2. Execute the "Heading Path" command
    - Can find in the command palette, or
    - Establish a hotkey for the command (BLANK by default)
 3. The heading path is now in your clipboard
    - Example: 
-      - If headings above "Heading 3" are "Heading 2" and "Heading 1".
+      - If the text is under "Heading 3" which is under "Heading 2" and "Heading 1",
          - Output: "Heading 1>Heading 2>Heading 3" 
 4. Paste the heading path where you wish
 
