@@ -39,6 +39,10 @@ You can install this plugin within Obsidian by doing the following:
          - Output: "Heading 1>Heading 2>Heading 3" 
 4. Paste the heading path where you wish
 
+## Customization
+
+1. Change the string used for concatenation in the plugin's settings!
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a pull request or open an issue on GitHub.
