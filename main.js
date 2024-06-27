@@ -40,13 +40,50 @@ module.exports = class HeadingPathPlugin extends Plugin {
 
     convertLatexToPlainText(text) {
         return text.replace(/\$(.*?)\$/g, (match, p1) => {
-            // Extract the content inside the dollar signs and convert LaTeX commands
-            return p1
-                .replace(/\\(?:text|mathrm|mathbf|mathit)\{([^}]*)\}/g, '$1') // Handle text-related commands
-                .replace(/\\[a-z]*\s*/gi, '') // Remove other LaTeX commands
-                .replace(/\{([^}]*)\}/g, '$1') // Remove braces
-                .replace(/_/g, ''); // Remove underscores used for subscript
+            let cleaned = p1
+                .replace(/\\(?:text|mathrm|mathbf|mathit)\{([^}]*)\}/g, '$1')  // Convert LaTeX text commands to plain text
+                .replace(/\\[a-z]+\s*/gi, '')  // Remove other LaTeX commands
+                .replace(/\{/g, '(')  // Replace left curly braces
+                .replace(/\}/g, ')')  // Replace right curly braces
+                .replace(/_([^_()]+)/g, (_, subscript) => `_${this.parseSubscript(subscript)}`)  // Handle subscripts
+                .replace(/_([(])/g, '_$1');  // Adjust subscript formatting if followed by a parenthesis
+    
+            return cleaned;
         });
+    }
+    
+    parseSubscript(content) {
+        let result = '';
+        let depth = 0;
+        for (let i = 0; i < content.length; i++) {
+            let char = content[i];
+            if (char === ',' && depth === 0) {
+                result += ', ';
+            } else if (char === '_') {
+                let subContent = '';
+                let skip = i + 1;
+                if (content[skip] === '{') {
+                    depth++;
+                    skip++;
+                    while (depth > 0 && skip < content.length) {
+                        if (content[skip] === '{') depth++;
+                        if (content[skip] === '}') depth--;
+                        if (depth > 0) subContent += content[skip];
+                        skip++;
+                    }
+                } else {
+                    while (skip < content.length && content[skip].match(/[\w\\]/)) {
+                        subContent += content[skip];
+                        skip++;
+                    }
+                }
+                result += '_(' + this.parseSubscript(subContent) + ')';
+                i = skip - 1;  // Ensure i skips over the processed substring
+            } else {
+                result += char;
+            }
+        }
+        return result;
     }
 
     Copy() {
@@ -102,13 +139,11 @@ module.exports = class HeadingPathPlugin extends Plugin {
 
         navigator.clipboard.writeText(headingPath).then(() => {
             new Notice('Heading path copied to clipboard', 3000);
-        })
+        });
     }
 }
 
 class SettingTab extends PluginSettingTab {
-    plugin;
-
     constructor(app, plugin) {
         super(app, plugin);
         this.plugin = plugin;
