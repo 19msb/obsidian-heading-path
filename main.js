@@ -1,8 +1,9 @@
-const { Plugin, PluginSettingTab, Setting } = require('obsidian');
+const { Plugin, MarkdownView, PluginSettingTab, Notice, Setting } = require('obsidian');
 
 module.exports = class HeadingPathPlugin extends Plugin {
     settings = {
-        concatSymbol: ">"
+        concatSymbol: ">",
+        convertLatex: false
     };
 
     async onload() {
@@ -37,8 +38,19 @@ module.exports = class HeadingPathPlugin extends Plugin {
         await this.saveData(this.settings);
     }
 
+    convertLatexToPlainText(text) {
+        return text.replace(/\$(.*?)\$/g, (match, p1) => {
+            // Extract the content inside the dollar signs and convert LaTeX commands
+            return p1
+                .replace(/\\(?:text|mathrm|mathbf|mathit)\{([^}]*)\}/g, '$1') // Handle text-related commands
+                .replace(/\\[a-z]*\s*/gi, '') // Remove other LaTeX commands
+                .replace(/\{([^}]*)\}/g, '$1') // Remove braces
+                .replace(/_/g, ''); // Remove underscores used for subscript
+        });
+    }
+
     Copy() {
-        const editor = this.app.workspace.getActiveViewOfType(require('obsidian').MarkdownView)?.editor;
+        const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
         if (!editor) {
             new Notice('No active editor', 3000);
             return;
@@ -58,6 +70,10 @@ module.exports = class HeadingPathPlugin extends Plugin {
                 let headingLevel = headingMatch[1].length;
                 let headingText = headingMatch[2].trim();
     
+                if (this.settings.convertLatex) {
+                    headingText = this.convertLatexToPlainText(headingText);
+                }
+    
                 headingPath = headingText;
                 for (let upperLine = line - 1; upperLine >= 0; upperLine--) {
                     const currentLineText = editor.getLine(upperLine);
@@ -66,7 +82,11 @@ module.exports = class HeadingPathPlugin extends Plugin {
                     if (currentHeadingMatch) {
                         let currentHeadingLevel = currentHeadingMatch[1].length;
                         if (currentHeadingLevel < headingLevel) {
-                            headingPath = `${currentHeadingMatch[2].trim()}${this.settings.concatSymbol}${headingPath}`;
+                            headingText = currentHeadingMatch[2].trim();
+                            if (this.settings.convertLatex) {
+                                headingText = this.convertLatexToPlainText(headingText);
+                            }
+                            headingPath = `${headingText}${this.settings.concatSymbol}${headingPath}`;
                             headingLevel = currentHeadingLevel;
                         }
                     }
@@ -84,7 +104,6 @@ module.exports = class HeadingPathPlugin extends Plugin {
             new Notice('Heading path copied to clipboard', 3000);
         })
     }
-    
 }
 
 class SettingTab extends PluginSettingTab {
@@ -101,12 +120,11 @@ class SettingTab extends PluginSettingTab {
     
         containerEl.createEl('h1', { text: 'Custom concatenation' });
     
-        const settingsContainer = containerEl.createDiv({
+        const concatContainer = containerEl.createDiv({
             cls: 'settings-container'
         });
     
-        // Input setting to update dynamic text
-        new Setting(settingsContainer)
+        new Setting(concatContainer)
             .setName('Concatenation string')
             .setDesc("Define the string used to concatenate headings when copying a selection's heading path.")
             .addText(text => text
@@ -119,9 +137,9 @@ class SettingTab extends PluginSettingTab {
                 })); 
 
         // Container for demo string settings
-        const demo_stringContainer = settingsContainer.createDiv({
+        const demo_stringContainer = concatContainer.createDiv({
             cls: 'demo-string-container',
-            attr: { style: 'display: flex; justify-content: space-between;margin-top: -5px; margin-bottom: 5px'}
+            attr: { style: 'display: flex; justify-content: space-between; margin-bottom: 5px'}
         });
         // Static text on the left
         demo_stringContainer.createEl('span', {
@@ -133,9 +151,9 @@ class SettingTab extends PluginSettingTab {
         });
 
         // Container for default string settings
-        const default_stringContainer = settingsContainer.createDiv({
+        const default_stringContainer = concatContainer.createDiv({
             cls: 'default-string-container',
-            attr: { style: 'display: flex; justify-content: space-between; margin-bottom: 5px'}
+            attr: { style: 'display: flex; justify-content: space-between; margin-bottom: 10px'}
         });
         // Create first span element with text "Default:"
         const span1s = default_stringContainer.createEl('span', {
@@ -151,7 +169,7 @@ class SettingTab extends PluginSettingTab {
         span2s.style.color = '#aaaaaa';
         
         // Container for demo path settings
-        const demo_pathContainer = settingsContainer.createDiv({
+        const demo_pathContainer = concatContainer.createDiv({
             cls: 'demo-path-container',
             attr: { style: 'display: flex; justify-content: space-between;margin-bottom: 5px' }
         });
@@ -165,9 +183,9 @@ class SettingTab extends PluginSettingTab {
         });   
 
         // Container for default path settings
-        const default_pathContainer = settingsContainer.createDiv({
+        const default_pathContainer = concatContainer.createDiv({
             cls: 'default-path-container',
-            attr: { style: 'display: flex; justify-content: space-between'}
+            attr: { style: 'display: flex; justify-content: space-between; margin-bottom: 10px'}
         });
         // Create first span element with text "Default:"
         const span1p = default_pathContainer.createEl('span', {
@@ -181,6 +199,24 @@ class SettingTab extends PluginSettingTab {
         });
         span2p.style.fontSize = '12px'; // Apply styles to the second span
         span2p.style.color = '#aaaaaa';  
+
+        containerEl.createEl('hr');
+
+        containerEl.createEl('h1', { text: 'Handle LaTeX' });
+
+        const latexContainer = containerEl.createDiv({
+            cls: 'latex-container'
+        });
+
+        new Setting(latexContainer)
+            .setName('Convert LaTeX in heading path to plain text')
+            .setDesc('Depending on use case, LaTeX characters may be problematic. Does not affect headings, only the copied path.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.convertLatex)
+                .onChange(async (value) => {
+                    this.plugin.settings.convertLatex = value;
+                    await this.plugin.saveSettings();
+                }));
 
         containerEl.createEl('hr');
 
