@@ -41,7 +41,9 @@ You can install this plugin within Obsidian by doing the following:
 
 ## Customization
 
-1. Change the string used for concatenation in the plugin's settings!
+1. In the settings:
+   1. Change the string used for concatenation in the plugin's settings!
+   2. Toggle LaTex handling to strip problematic characters from your copied heading path!
 
 ## Contributing
 
