@@ -52,7 +52,7 @@ module.exports = class HeadingPathPlugin extends require('obsidian').Plugin {
                     if (currentHeadingMatch) {
                         let currentHeadingLevel = currentHeadingMatch[1].length;
                         if (currentHeadingLevel < headingLevel) {
-                            headingPath = `${currentHeadingMatch[2]} > ${headingPath}`;
+                            headingPath = `${currentHeadingMatch[2]}>${headingPath}`;
                             headingLevel = currentHeadingLevel;
                         }
                     }
