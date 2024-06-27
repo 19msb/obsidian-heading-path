@@ -1,0 +1,11 @@
+{
+  "id": "heading-path",
+  "name": "Heading Path",
+  "version": "0.1.0",
+  "minAppVersion": "0.12.0",
+  "description": "Copy the path of the selected heading.",
+  "author": "Michael Baker",
+  "authorUrl": "https://forum.obsidian.md/u/mistba/summary",
+  "fundingUrl": "https://ko-fi.com/mistba",
+  "isDesktopOnly": false
+}
