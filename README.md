@@ -1,6 +1,6 @@
 # Heading Path
 
-Heading Path is an Obsidian plugin that allows users to quickly copy the path of a heading. 
+Heading Path is an Obsidian plugin that allows users to quickly copy the path of a heading to their clipboard. It is a simple yet powerful tool for niche use cases. 
 
 ## Installation
 
